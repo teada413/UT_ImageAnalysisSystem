@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アトラス画像解析システム ユーザーマニュアル</title>
+<style>
+  :root { --accent: #1976d2; --bg: #fafafa; --card: #fff; --border: #e0e0e0; --text: #333; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Meiryo', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  header { background: linear-gradient(135deg, #1565c0, #1976d2); color: #fff; padding: 32px 0; text-align: center; }
+  header h1 { font-size: 2em; letter-spacing: 0.05em; }
+  header p { margin-top: 8px; font-size: 1em; opacity: 0.85; }
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
+  nav { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 32px; }
+  nav h2 { font-size: 1.1em; margin-bottom: 10px; color: var(--accent); }
+  nav ol { padding-left: 20px; }
+  nav li { margin: 4px 0; }
+  nav a { color: var(--accent); text-decoration: none; }
+  nav a:hover { text-decoration: underline; }
+  section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 24px 28px; margin-bottom: 24px; }
+  h2 { font-size: 1.4em; color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 6px; margin-bottom: 16px; }
+  h3 { font-size: 1.1em; margin: 18px 0 8px; color: #444; }
+  p, li { font-size: 0.95em; }
+  ul, ol { padding-left: 22px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9em; }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+  th { background: #f5f5f5; font-weight: bold; }
+  code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+  .tip { background: #e3f2fd; border-left: 4px solid var(--accent); padding: 12px 16px; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .warn { background: #fff3e0; border-left: 4px solid #e65100; padding: 12px 16px; margin: 12px 0; border-radius: 0 4px 4px 0; }
+  .key { display: inline-block; background: #eee; border: 1px solid #ccc; border-radius: 4px; padding: 1px 8px; font-size: 0.85em; font-family: monospace; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; color: #fff; font-size: 0.8em; font-weight: bold; }
+  .badge-blue { background: #1976d2; }
+  .badge-red { background: #d32f2f; }
+  .badge-green { background: #2ea043; }
+  .badge-orange { background: #e65100; }
+  .badge-purple { background: #6a1b9a; }
+  footer { text-align: center; padding: 20px; color: #999; font-size: 0.85em; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>アトラス画像解析システム</h1>
+  <p>ユーザーマニュアル</p>
+</header>
+
+<div class="container">
+
+<nav>
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#overview">はじめに</a></li>
+    <li><a href="#startup">起動と作業フォルダの選択</a></li>
+    <li><a href="#screen">画面構成</a></li>
+    <li><a href="#draw">変状の入力（入力モード）</a></li>
+    <li><a href="#exclusion">除外区間の入力</a></li>
+    <li><a href="#move">シェイプの移動・リサイズ（移動モード）</a></li>
+    <li><a href="#table">変状一覧の操作</a></li>
+    <li><a href="#excel">Excel出力</a></li>
+    <li><a href="#pdf">PDF出力</a></li>
+    <li><a href="#log">集計表出力</a></li>
+    <li><a href="#csv">除外CSV一括取込</a></li>
+    <li><a href="#heatmap">ヒートマップ</a></li>
+    <li><a href="#shortcut">操作早見表</a></li>
+    <li><a href="#trouble">トラブルシューティング</a></li>
+  </ol>
+</nav>
+
+<!-- 1. はじめに -->
+<section id="overview">
+  <h2>1. はじめに</h2>
+  <p>本システムは、鉄道軌道のUT検査画像（マーキングあり／なし）を比較表示し、画像上に変状箇所（ゆるみ・空洞）や除外区間を描画・記録するためのツールです。</p>
+  <h3>動作要件</h3>
+  <ul>
+    <li>Windows 11</li>
+    <li>Microsoft Excel（PDF出力機能を使用する場合）</li>
+  </ul>
+  <h3>作業フォルダの構成</h3>
+  <p>以下の構成でフォルダを準備してください。</p>
+  <pre style="background:#f5f5f5;padding:12px;border-radius:4px;font-size:0.9em;">
+作業フォルダ/
+├── xxxx_マーキングあり/
+│   ├── 20250927_002_両毛線_s_s_012k120m_c.jpg
+│   ├── 20250927_002_両毛線_s_s_012k140m_c.jpg
+│   └── ...
+└── xxxx_マーキングなし/
+    ├── 20250927_002_両毛線_s_s_012k120m_c.jpg
+    └── ...</pre>
+  <div class="tip">画像ファイル名にキロ程（例: <code>012k120m</code>）が含まれている必要があります。</div>
+</section>
+
+<!-- 2. 起動 -->
+<section id="startup">
+  <h2>2. 起動と作業フォルダの選択</h2>
+  <ol>
+    <li><code>アトラス画像解析システム.exe</code> をダブルクリックして起動します。</li>
+    <li>画面左上の <span class="badge badge-blue">フォルダを選択</span> ボタンをクリックします。</li>
+    <li>作業フォルダ（マーキングあり／なしのサブフォルダを含む親フォルダ）を選択します。</li>
+    <li>データベースが存在しない場合、新規作成の確認ダイアログが表示されます。「はい」を選択してください。</li>
+    <li>画像が読み込まれ、最初のキロ程が表示されます。</li>
+  </ol>
+  <div class="tip">作業データは作業フォルダ内の <code>drawings.db</code> に自動保存されます。次回同じフォルダを開けば前回の作業が復元されます。</div>
+</section>
+
+<!-- 3. 画面構成 -->
+<section id="screen">
+  <h2>3. 画面構成</h2>
+  <h3>コントロールパネル（上部）</h3>
+  <table>
+    <tr><th>ボタン</th><th>機能</th></tr>
+    <tr><td><span class="badge badge-blue">フォルダを選択</span></td><td>作業フォルダを開く</td></tr>
+    <tr><td><span class="badge badge-green">Excel出力</span></td><td>Excelテンプレート方式で報告書を出力</td></tr>
+    <tr><td><span class="badge badge-red">PDF出力</span></td><td>Excel経由でPDFを出力</td></tr>
+    <tr><td><span class="badge badge-blue">集計表出力</span></td><td>詳細.log と 集計.log を出力</td></tr>
+    <tr><td><span class="badge badge-orange">除外csv一括取込</span></td><td>CSVから除外区間を一括取り込み</td></tr>
+    <tr><td><code>≪10</code> <code>＜</code> <code>＞</code> <code>10≫</code></td><td>ページ送り（1枚 / 10枚単位）</td></tr>
+  </table>
+
+  <h3>ツールパネル</h3>
+  <table>
+    <tr><th>項目</th><th>説明</th></tr>
+    <tr><td>入力モード / 移動モード</td><td>描画と移動・リサイズの切替</td></tr>
+    <tr><td>四角を描画 / 丸を描画</td><td>描画する形状の選択</td></tr>
+    <tr><td><span style="color:blue;font-weight:bold;">ゆるみ</span> / <span style="color:red;font-weight:bold;">空洞</span> / <span style="color:#cc0000;font-weight:bold;">除外区間</span></td><td>変状種別の選択</td></tr>
+  </table>
+
+  <h3>画像表示エリア（中央）</h3>
+  <p>左側に「マーキングあり」、右側に「マーキングなし」の画像が表示されます。左右は完全に同期しています。</p>
+
+  <h3>変状一覧（下段）</h3>
+  <p>現在のキロ程に登録されている変状・除外区間の一覧が表示されます。除外区間の行は薄い赤色で表示されます。</p>
+
+  <h3>キロ程一覧（右サイドバー）</h3>
+  <p>読み込んだ全キロ程が一覧表示されます。クリックするとそのキロ程にジャンプします。</p>
+</section>
+
+<!-- 4. 変状の入力 -->
+<section id="draw">
+  <h2>4. 変状の入力（入力モード）</h2>
+  <ol>
+    <li>ツールパネルで <strong>入力モード</strong> が選択されていることを確認します。</li>
+    <li><strong>形状</strong>（四角 / 丸）と <strong>種別</strong>（ゆるみ / 空洞）を選択します。</li>
+    <li>画像上の描画エリア（シアン色の破線枠内）でマウスをドラッグして図形を描画します。</li>
+    <li>描画完了時に <strong>管理番号入力ダイアログ</strong> が表示されます。
+      <ul>
+        <li>次の番号が自動提案されます。必要に応じて変更してください。</li>
+        <li>同一キロ程内で番号の重複はできません。</li>
+        <li>キャンセルすると描画は取り消されます。</li>
+      </ul>
+    </li>
+  </ol>
+  <h3>種別ごとの色</h3>
+  <table>
+    <tr><th>種別</th><th>色</th><th>説明</th></tr>
+    <tr><td>ゆるみ</td><td style="color:blue;font-weight:bold;">■ 青</td><td>ゆるみの可能性がある箇所</td></tr>
+    <tr><td>空洞</td><td style="color:red;font-weight:bold;">■ 赤</td><td>空洞の可能性がある箇所</td></tr>
+    <tr><td>除外区間</td><td style="color:red;font-weight:bold;">■ 赤（半透明）</td><td>設備等による反射などの除外範囲</td></tr>
+  </table>
+  <div class="tip">描画はエリア内に自動クランプされます。エリア外をクリックしても反応しません。</div>
+</section>
+
+<!-- 5. 除外区間 -->
+<section id="exclusion">
+  <h2>5. 除外区間の入力</h2>
+  <ol>
+    <li>種別で <strong>除外区間</strong> を選択します。</li>
+    <li>画像上の描画エリアをクリックすると、除外区間設定ダイアログが開きます。</li>
+    <li>以下の項目を入力します。
+      <table>
+        <tr><th>項目</th><th>説明</th></tr>
+        <tr><td>管理番号</td><td>自動採番（変状とは別カウント）。編集可能。</td></tr>
+        <tr><td>開始位置 (m)</td><td>0.0〜20.0m の範囲で指定</td></tr>
+        <tr><td>終了位置 (m)</td><td>開始位置以降の値を指定</td></tr>
+        <tr><td>除外理由</td><td>デフォルト：「設備等による反射」</td></tr>
+        <tr><td>他エリアにも同時入力</td><td>チェックを入れると同じ範囲を他エリアにも一括入力</td></tr>
+      </table>
+    </li>
+    <li>OKを押すと除外区間が登録されます。</li>
+  </ol>
+  <div class="warn">同一エリア内で除外区間の範囲が重複する入力はできません。</div>
+</section>
+
+<!-- 6. 移動・リサイズ -->
+<section id="move">
+  <h2>6. シェイプの移動・リサイズ（移動モード）</h2>
+  <ol>
+    <li>ツールパネルで <strong>移動モード</strong> を選択します。</li>
+    <li>シェイプをクリックすると、白い破線のバウンディングボックスと8つのハンドルが表示されます。</li>
+    <li><strong>移動</strong>：シェイプ本体をドラッグします。エリア外には移動できません。</li>
+    <li><strong>リサイズ</strong>：ハンドル（角・辺の四角い点）をドラッグします。</li>
+    <li>シェイプ以外の場所をクリックすると選択が解除されます。</li>
+  </ol>
+  <div class="tip">バウンディングボックスはシェイプ外をクリックするまで表示され続けます。連続して変形操作が可能です。</div>
+  <div class="tip">下段の変状一覧で行をクリックすると、対応するシェイプが自動選択されます。逆に、画像上でシェイプを選択すると一覧の対応行がハイライトされます。</div>
+</section>
+
+<!-- 7. 変状一覧 -->
+<section id="table">
+  <h2>7. 変状一覧の操作</h2>
+  <h3>メイン画面の一覧テーブル</h3>
+  <ul>
+    <li><strong>管理番号</strong>：ダブルクリックで直接編集できます。</li>
+    <li><strong>除外理由</strong>：除外区間行のみ、ダブルクリックで編集できます。</li>
+    <li><span class="badge badge-red">選択した図形を削除</span>：選択行の図形をDBから削除します。</li>
+  </ul>
+
+  <h3>変状一覧編集ダイアログ</h3>
+  <p>下段の <span class="badge badge-blue">変状一覧</span> ボタンを押すと、現在のキロ程の変状を一括編集できるダイアログが開きます。</p>
+  <ul>
+    <li><strong>変状タブ</strong>：ゆるみ・空洞の一覧。管理番号を編集可能。</li>
+    <li><strong>除外タブ</strong>：除外区間の一覧。管理番号・除外理由を編集可能。</li>
+    <li>管理番号の入れ替え（例：①と②を交換）にも対応しています。</li>
+    <li>変更後は <span class="badge badge-green">保存</span> ボタンを押してください。</li>
+    <li>未保存のまま閉じようとすると確認メッセージが表示されます。</li>
+  </ul>
+</section>
+
+<!-- 8. Excel出力 -->
+<section id="excel">
+  <h2>8. Excel出力</h2>
+  <ol>
+    <li><span class="badge badge-green">Excel出力</span> ボタンをクリックします。</li>
+    <li><strong>出力範囲選択ダイアログ</strong>が開きます。
+      <ul>
+        <li>チェックボックスで出力するキロ程を選択します。</li>
+        <li><strong>ドラッグで連続ON/OFF</strong>が可能です（チェックボックス上をドラッグ）。</li>
+        <li>「全選択」「全解除」ボタンも利用できます。</li>
+        <li><strong>個別ファイルで出力する</strong>にチェックを入れると、キロ程ごとに1ファイルずつ出力されます。</li>
+      </ul>
+    </li>
+    <li>テンプレートファイルが見つからない場合、選択ダイアログが表示されます。</li>
+    <li>保存先を指定して出力します。</li>
+  </ol>
+
+  <h3>出力内容</h3>
+  <ul>
+    <li>テンプレートの <code>temp</code> シートを複製し、キロ程名のシートを生成</li>
+    <li>上段：トリミング済み画像（Y=900px）＋変状シェイプ＋管理番号ラベル＋凡例</li>
+    <li>下段：変状一覧（管理番号上位8件、除外区間は除外）</li>
+    <li>フッターにページ番号</li>
+  </ul>
+
+  <h3>デフォルトファイル名</h3>
+  <p><code>解析報告書（012k120m～012k540m）.xlsx</code>（選択範囲の最小〜最大キロ程）</p>
+</section>
+
+<!-- 9. PDF出力 -->
+<section id="pdf">
+  <h2>9. PDF出力</h2>
+  <ol>
+    <li><span class="badge badge-red">PDF出力</span> ボタンをクリックします。</li>
+    <li>Excel出力と同じ範囲選択ダイアログが開きます。</li>
+    <li>保存先を指定すると、内部でExcelを生成しPDFに変換します。</li>
+    <li>変換中はスピナーが表示されます。</li>
+  </ol>
+  <div class="warn">PDF出力にはMicrosoft Excelのインストールが必要です。</div>
+  <div class="tip">個別ファイル出力の場合、進捗（例：「PDF変換中... (3/10)」）が表示されます。</div>
+</section>
+
+<!-- 10. 集計表出力 -->
+<section id="log">
+  <h2>10. 集計表出力</h2>
+  <ol>
+    <li><span class="badge badge-blue">集計表出力</span> ボタンをクリックします。</li>
+    <li>作業フォルダ内に「集計表」フォルダが作成され、各キロ程の詳細.log と集計.log が出力されます。</li>
+    <li>既にファイルが存在する場合は上書き確認が表示されます。</li>
+  </ol>
+
+  <h3>出力ファイル例</h3>
+  <table>
+    <tr><th>ファイル</th><th>内容</th></tr>
+    <tr><td><code>1012540_xxx詳細.log</code></td><td>変状・除外区間の詳細情報</td></tr>
+    <tr><td><code>1012540_xxx集計.log</code></td><td>空洞・ゆるみの件数集計</td></tr>
+  </table>
+</section>
+
+<!-- 11. 除外CSV一括取込 -->
+<section id="csv">
+  <h2>11. 除外CSV一括取込</h2>
+  <ol>
+    <li><span class="badge badge-orange">除外csv一括取込</span> ボタンをクリックします。</li>
+    <li>CSVファイルが格納されたフォルダを選択します。</li>
+    <li>CSVファイル名は画像ファイル名と対応している必要があります（例：<code>20250927_002_両毛線_s_s_012k120m.csv</code>）。</li>
+    <li>既に除外区間が存在する場合、<strong>上書き</strong>（既存削除→取込）または<strong>追加</strong>（既存維持→追加取込）を選択できます。</li>
+  </ol>
+
+  <h3>CSV形式</h3>
+  <pre style="background:#f5f5f5;padding:12px;border-radius:4px;font-size:0.9em;">
+除外設定
+左,5.0,6.0
+左,15.5,19.5
+右,19.0,19.5
+内,19.0,19.5
+NO.,メッシュ内割合[%],ファイル名,...
+（以降は読み込み対象外）</pre>
+</section>
+
+<!-- 12. ヒートマップ -->
+<section id="heatmap">
+  <h2>12. ヒートマップ</h2>
+  <p>下段の <span class="badge badge-purple">ヒートマップ</span> ボタンをクリックすると、全キロ程の変状分布を俯瞰できるウィンドウが開きます。</p>
+
+  <h3>表示内容</h3>
+  <table>
+    <tr><th>行</th><th>内容</th></tr>
+    <tr><td>全体</td><td>全エリアの変状を重ねて表示</td></tr>
+    <tr><td>左軌間外</td><td>左軌間外の変状のみ</td></tr>
+    <tr><td>軌間内</td><td>軌間内の変状のみ</td></tr>
+    <tr><td>右軌間外</td><td>右軌間外の変状のみ</td></tr>
+  </table>
+
+  <h3>操作</h3>
+  <table>
+    <tr><th>操作</th><th>動作</th></tr>
+    <tr><td>マウスホイール</td><td>ズームイン / ズームアウト</td></tr>
+    <tr><td>マウスドラッグ</td><td>左右スクロール</td></tr>
+    <tr><td>マウスホバー</td><td>カーソル位置のキロ程をリアルタイム表示</td></tr>
+    <tr><td>上部チェックボックス</td><td>ゆるみ / 空洞 / 除外区間 / 途切れ の表示ON/OFF</td></tr>
+  </table>
+
+  <div class="tip">キロ程が途切れている箇所はオレンジ色の破線で表示されます。</div>
+</section>
+
+<!-- 13. 操作早見表 -->
+<section id="shortcut">
+  <h2>13. 操作早見表</h2>
+  <h3>画像上の操作</h3>
+  <table>
+    <tr><th>操作</th><th>入力モード</th><th>移動モード</th></tr>
+    <tr><td>左クリック＋ドラッグ</td><td>図形を描画</td><td>シェイプを移動</td></tr>
+    <tr><td>左クリック（シェイプ上）</td><td>—</td><td>シェイプを選択</td></tr>
+    <tr><td>左クリック（空白）</td><td>—</td><td>選択解除</td></tr>
+    <tr><td>ホイール</td><td colspan="2">ズーム（カーソル位置中心）</td></tr>
+    <tr><td>右ドラッグ / 中ドラッグ</td><td colspan="2">パン（スクロール）</td></tr>
+  </table>
+
+  <h3>テーブル操作</h3>
+  <table>
+    <tr><th>操作</th><th>動作</th></tr>
+    <tr><td>行クリック</td><td>対応シェイプを選択（バウンディングボックス表示）</td></tr>
+    <tr><td>管理番号ダブルクリック</td><td>管理番号を編集</td></tr>
+    <tr><td>除外理由ダブルクリック</td><td>除外理由を編集（除外区間行のみ）</td></tr>
+  </table>
+</section>
+
+<!-- 14. トラブルシューティング -->
+<section id="trouble">
+  <h2>14. トラブルシューティング</h2>
+  <table>
+    <tr><th>症状</th><th>対処</th></tr>
+    <tr><td>「エラー: サブフォルダが見つかりません」</td><td>作業フォルダの直下に「マーキングあり」「マーキングなし」を含む名前のサブフォルダが必要です。</td></tr>
+    <tr><td>Excel出力でテンプレートが見つからない</td><td>デフォルトパスにテンプレートがない場合、ファイル選択ダイアログが表示されます。手動で選択してください。</td></tr>
+    <tr><td>PDF出力に失敗する</td><td>Microsoft Excelがインストールされているか確認してください。出力先フォルダに書き込み権限があるか確認してください。</td></tr>
+    <tr><td>管理番号が重複エラーになる</td><td>同一キロ程内で同じ番号は使用できません。変状一覧ダイアログで番号の入れ替えが可能です。</td></tr>
+    <tr><td>画像が「画像なし」と表示される</td><td>マーキングなし画像が存在しない場合に表示されます。マーキングあり側は正常に動作します。</td></tr>
+  </table>
+</section>
+
+</div>
+
+<footer>
+  <p>アトラス画像解析システム ユーザーマニュアル</p>
+</footer>
+
+</body>
+</html>
