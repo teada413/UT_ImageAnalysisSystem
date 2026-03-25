@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+*.db
+*.log
+UT_Data/
+docs/ImageComparator/
+docs/dir_creator.py
+docs/sample.py
+docs/アトラス報告書.xlsx
+集計表/
