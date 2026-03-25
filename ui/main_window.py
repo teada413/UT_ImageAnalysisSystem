@@ -843,7 +843,6 @@ class ImageViewerApp(QMainWindow):
         try:
             tmp = tempfile.NamedTemporaryFile(
                 suffix='.xlsx', delete=False,
-                dir=os.path.dirname(pdf_path) or '.',
             )
             tmp_xlsx = tmp.name
             tmp.close()
@@ -907,7 +906,7 @@ class ImageViewerApp(QMainWindow):
         tmp_pairs = []  # [(tmp_xlsx, pdf_path), ...]
         try:
             for kilo in selected_kilos:
-                tmp = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False, dir=out_dir)
+                tmp = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
                 tmp_xlsx = tmp.name
                 tmp.close()
                 exporter = ExcelExporter(self.image_groups, [kilo], self.db)
