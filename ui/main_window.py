@@ -764,7 +764,7 @@ class ImageViewerApp(QMainWindow):
 
         if individual:
             # 個別ファイル出力 → フォルダ選択
-            out_dir = QFileDialog.getExistingDirectory(self, "出力先フォルダを選択")
+            out_dir = QFileDialog.getExistingDirectory(self, "出力先フォルダを選択", self.parent_folder)
             if not out_dir:
                 return
             try:
@@ -781,8 +781,9 @@ class ImageViewerApp(QMainWindow):
             # 一括ファイル出力
             start_kilo, end_kilo = range_dialog.filename_range()
             default_name = f"解析報告書（{start_kilo}～{end_kilo}）.xlsx"
+            default_path = os.path.join(self.parent_folder, default_name) if self.parent_folder else default_name
             output_path, _ = QFileDialog.getSaveFileName(
-                self, "名前を付けて保存", default_name, "Excel ファイル (*.xlsx)",
+                self, "名前を付けて保存", default_path, "Excel ファイル (*.xlsx)",
             )
             if not output_path:
                 return
@@ -818,7 +819,7 @@ class ImageViewerApp(QMainWindow):
 
         if individual:
             # 個別ファイル出力 → フォルダ選択
-            out_dir = QFileDialog.getExistingDirectory(self, "PDF出力先フォルダを選択")
+            out_dir = QFileDialog.getExistingDirectory(self, "PDF出力先フォルダを選択", self.parent_folder)
             if not out_dir:
                 return
             self._run_pdf_export_individual(selected_kilos, template_path, out_dir)
@@ -826,8 +827,9 @@ class ImageViewerApp(QMainWindow):
             # 一括ファイル出力
             start_kilo, end_kilo = range_dialog.filename_range()
             default_name = f"解析報告書（{start_kilo}～{end_kilo}）.pdf"
+            default_path = os.path.join(self.parent_folder, default_name) if self.parent_folder else default_name
             output_path, _ = QFileDialog.getSaveFileName(
-                self, "名前を付けて保存", default_name, "PDF ファイル (*.pdf)",
+                self, "名前を付けて保存", default_path, "PDF ファイル (*.pdf)",
             )
             if not output_path:
                 return
@@ -1018,8 +1020,23 @@ class ImageViewerApp(QMainWindow):
         if not self.sorted_kilos or not self.db.is_connected:
             return
 
-        csv_folder = QFileDialog.getExistingDirectory(self, "除外CSVフォルダを選択")
+        csv_folder = QFileDialog.getExistingDirectory(
+            self, "除外CSVフォルダを選択", self.parent_folder)
         if not csv_folder:
+            return
+
+        # キロ程形式を含むCSVの存在確認
+        import re
+        has_kilo_csv = any(
+            re.search(r'\d+k\d+m', f)
+            for f in os.listdir(csv_folder)
+            if f.lower().endswith('.csv')
+        )
+        if not has_kilo_csv:
+            QMessageBox.warning(
+                self, "CSVなし",
+                "選択したフォルダにキロ程形式のCSVファイルが見つかりませんでした。",
+            )
             return
 
         # 既存除外区間の確認

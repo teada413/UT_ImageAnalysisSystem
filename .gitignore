@@ -9,3 +9,10 @@ docs/dir_creator.py
 docs/sample.py
 docs/アトラス報告書.xlsx
 集計表/
+build/
+dist/
+*.spec
+icon/
+.claude/
+docs/Module1.txt
+docs/解析結果一覧表_連続_想定.xlsx
