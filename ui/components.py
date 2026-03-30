@@ -11,6 +11,7 @@ from PySide6.QtGui import QFont, QColor
 from core.calc_utils import circled_number
 
 EXCLUSION_BG = QColor(255, 200, 200)
+EXCLUSION_FG = QColor(80, 0, 0)
 
 
 class DrawingTable(QWidget):
@@ -189,6 +190,7 @@ class DrawingTable(QWidget):
                 item = self.table.item(row, col)
                 if item:
                     item.setBackground(EXCLUSION_BG)
+                    item.setForeground(EXCLUSION_FG)
 
         self.table.scrollToBottom()
         self.table.blockSignals(False)

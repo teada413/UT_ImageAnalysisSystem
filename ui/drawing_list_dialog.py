@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QColor
 
 EXCLUSION_BG = QColor(255, 200, 200)
+EXCLUSION_FG = QColor(80, 0, 0)
 
 
 class DrawingListDialog(QDialog):
@@ -199,6 +200,7 @@ class DrawingListDialog(QDialog):
                 item = t.item(row, col)
                 if item:
                     item.setBackground(EXCLUSION_BG)
+                    item.setForeground(EXCLUSION_FG)
         t.blockSignals(False)
 
     def _delete_selected(self):
