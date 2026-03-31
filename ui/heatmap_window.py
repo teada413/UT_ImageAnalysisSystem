@@ -4,7 +4,7 @@ import os
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox,
     QPushButton, QFileDialog, QMessageBox, QDialog, QGroupBox,
-    QRadioButton, QButtonGroup,
+    QRadioButton, QButtonGroup, QTextEdit, QSpinBox,
 )
 from PySide6.QtCore import Qt, QRectF, QPointF
 from PySide6.QtGui import (
@@ -477,7 +477,7 @@ class WaveformExportDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("波形Excel出力設定")
-        self.setMinimumWidth(300)
+        self.setMinimumWidth(500)
         layout = QVBoxLayout(self)
         ctrl_font = QFont("Meiryo", 12)
 
@@ -536,6 +536,51 @@ class WaveformExportDialog(QDialog):
         overlay_layout.addWidget(self._cb_exclusion)
         layout.addWidget(overlay_group)
 
+        # ヘッダー設定
+        header_group = QGroupBox("ヘッダー設定")
+        header_group.setFont(ctrl_font)
+        header_group.setCheckable(True)
+        header_group.setChecked(True)
+        self._header_group = header_group
+        header_layout = QVBoxLayout(header_group)
+
+        edit_font = QFont("Meiryo", 11)
+
+        lbl_left = QLabel("左ヘッダー:")
+        lbl_left.setFont(ctrl_font)
+        header_layout.addWidget(lbl_left)
+        self._header_left = QTextEdit()
+        self._header_left.setFont(edit_font)
+        self._header_left.setFixedHeight(56)
+        self._header_left.setPlainText("番号：〇〇〇〇\n件名：〇〇〇〇")
+        header_layout.addWidget(self._header_left)
+
+        lbl_right = QLabel("右ヘッダー:")
+        lbl_right.setFont(ctrl_font)
+        header_layout.addWidget(lbl_right)
+        self._header_right = QTextEdit()
+        self._header_right.setFont(edit_font)
+        self._header_right.setFixedHeight(56)
+        self._header_right.setPlainText("線名/駅間　〇〇線/〇〇～〇〇間\n計測キロ程　&A")
+        header_layout.addWidget(self._header_right)
+
+        # 文字サイズ
+        size_layout = QHBoxLayout()
+        lbl_size = QLabel("文字サイズ:")
+        lbl_size.setFont(ctrl_font)
+        size_layout.addWidget(lbl_size)
+        self._header_size = QSpinBox()
+        self._header_size.setFont(ctrl_font)
+        self._header_size.setRange(6, 72)
+        self._header_size.setValue(24)
+        self._header_size.setSuffix(" pt")
+        self._header_size.setFixedWidth(100)
+        size_layout.addWidget(self._header_size)
+        size_layout.addStretch()
+        header_layout.addLayout(size_layout)
+
+        layout.addWidget(header_group)
+
         # ボタン
         btn_layout = QHBoxLayout()
         ok_btn = QPushButton("出力")
@@ -576,6 +621,16 @@ class WaveformExportDialog(QDialog):
         if self._cb_exclusion.isChecked():
             overlays.append("除外区間")
         return overlays
+
+    def header_settings(self):
+        """ヘッダー設定を返す。OFFの場合はNone。"""
+        if not self._header_group.isChecked():
+            return None
+        return {
+            'left': self._header_left.toPlainText(),
+            'right': self._header_right.toPlainText(),
+            'size': self._header_size.value(),
+        }
 
 
 # ------------------------------------------------------------------
@@ -760,6 +815,7 @@ class HeatmapWindow(QMainWindow):
         selected_areas = dialog.selected_areas()
         selected_overlays = dialog.selected_overlays()
         image_key = dialog.image_key()
+        header_settings = dialog.header_settings()
         if not selected_areas:
             QMessageBox.warning(self, "選択なし", "出力するエリアが選択されていません。")
             return
@@ -785,6 +841,7 @@ class HeatmapWindow(QMainWindow):
                 areas=selected_areas,
                 overlays=selected_overlays,
                 image_key=image_key,
+                header_settings=header_settings,
             )
             QMessageBox.information(self, "完了", f"波形Excelを保存しました:\n{output_path}")
         except Exception as e:

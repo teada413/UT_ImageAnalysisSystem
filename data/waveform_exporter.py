@@ -82,7 +82,8 @@ class WaveformExcelExporter:
         self.sorted_kilos = sorted_kilos
         self.db = db
 
-    def export(self, output_path, areas=None, overlays=None, image_key='unmarked', template_path=None):
+    def export(self, output_path, areas=None, overlays=None, image_key='unmarked',
+               template_path=None, header_settings=None):
         """Excel出力メイン処理"""
         if areas is None:
             areas = list(AREA_NAMES)
@@ -165,8 +166,14 @@ class WaveformExcelExporter:
                 new_img.anchor = deepcopy(data['anchor'])
                 ws.add_image(new_img)
 
-            # 1. テンプレート(temp_ws)から左ヘッダーやフッターを明示的にコピーして保護する
-            ws.oddHeader.left.text = temp_ws.oddHeader.left.text
+            # ヘッダー設定（ダイアログで指定された内容・サイズ）
+            if header_settings:
+                pt = header_settings.get('size', 24)
+                hdr_prefix = f'&"Meiryo,標準"&{pt}'
+                if header_settings.get('left'):
+                    ws.oddHeader.left.text = hdr_prefix + header_settings['left']
+                if header_settings.get('right'):
+                    ws.oddHeader.right.text = hdr_prefix + header_settings['right']
 
             # 各ブロックの画像を連続配置
             for block_idx in range(end_idx - start_idx):
