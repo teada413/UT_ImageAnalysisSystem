@@ -13,7 +13,7 @@ from PySide6.QtGui import (
 )
 from PIL import Image as PILImage
 
-from core.calc_utils import parse_kilo, px_to_m_x, WORK_AREAS
+from core.calc_utils import parse_kilo, px_to_m_x, WORK_AREAS, extract_line_type
 
 AREA_NAMES = ["左軌間外", "軌間内", "右軌間外"]
 
@@ -77,6 +77,7 @@ class HeatmapCanvas(QWidget):
         self._area_strips = {}  # {(kilo, area_name): QImage}
         self._native_ratio = False
         self._image_key = 'marked'  # 'marked' or 'unmarked'
+        self._line_filter = None  # None=全て, 'd'=下り, 'u'=上り, 's'=単線
 
     def _effective_row_h(self):
         """等倍モード時はネイティブ縦横比に基づく行高さを返す"""
@@ -137,7 +138,36 @@ class HeatmapCanvas(QWidget):
             self._view_end = self._total_end
 
         self._reload_strips()
+        self._apply_line_filter()
         self.update()
+
+    def set_line_filter(self, line_type):
+        """線種フィルタを設定（None=全て, 'd'/'u'/'s'）"""
+        self._line_filter = line_type
+        self._apply_line_filter()
+        self.update()
+
+    def _apply_line_filter(self):
+        """線種フィルタに基づいてビュー範囲を再計算"""
+        segs = self._get_filtered_segments()
+        if segs:
+            self._total_start = segs[0][0]
+            self._total_end = segs[-1][1]
+            self._view_start = self._total_start
+            self._view_end = self._total_end
+
+    def _get_filtered_segments(self):
+        """線種フィルタを適用したセグメントリストを返す"""
+        if self._line_filter is None:
+            return self._segments
+        return [s for s in self._segments
+                if extract_line_type(s[2]) == self._line_filter]
+
+    def _is_kilo_visible(self, kilo):
+        """線種フィルタに基づいてキロ程が表示対象か判定"""
+        if self._line_filter is None:
+            return True
+        return extract_line_type(kilo) == self._line_filter
 
     def set_image_key(self, key):
         """表示画像を切り替え ('marked' or 'unmarked')"""
@@ -210,7 +240,8 @@ class HeatmapCanvas(QWidget):
 
         painter.fillRect(0, 0, w, h, QColor(30, 30, 30))
 
-        if not self._segments:
+        filtered_segs = self._get_filtered_segments()
+        if not filtered_segs:
             painter.setPen(QColor("white"))
             painter.setFont(QFont("Meiryo", 14))
             painter.drawText(QRectF(0, 0, w, h), Qt.AlignCenter, "データがありません")
@@ -283,7 +314,8 @@ class HeatmapCanvas(QWidget):
 
         excl_h = min(EXCLUSION_H, int(rh * 0.15))
 
-        for seg_start, seg_end, kilo in self._segments:
+        filtered_segs = self._get_filtered_segments()
+        for seg_start, seg_end, kilo in filtered_segs:
             x0 = self._m_to_x(seg_start)
             x1 = self._m_to_x(seg_end)
             if x1 < LABEL_W or x0 > w:
@@ -302,9 +334,9 @@ class HeatmapCanvas(QWidget):
             painter.drawRect(QRectF(x0, y, x1 - x0, rh))
 
         if self.show_gap:
-            for i in range(len(self._segments) - 1):
-                _, prev_end, _ = self._segments[i]
-                next_start, _, _ = self._segments[i + 1]
+            for i in range(len(filtered_segs) - 1):
+                _, prev_end, _ = filtered_segs[i]
+                next_start, _, _ = filtered_segs[i + 1]
                 if next_start > prev_end + 0.1:
                     gx0 = self._m_to_x(prev_end)
                     gx1 = self._m_to_x(next_start)
@@ -315,6 +347,8 @@ class HeatmapCanvas(QWidget):
 
         if self.show_exclusion:
             for kilo_str in self._drawings:
+                if not self._is_kilo_visible(kilo_str):
+                    continue
                 for d in self._drawings[kilo_str]:
                     if d['category'] != '除外区間':
                         continue
@@ -336,6 +370,8 @@ class HeatmapCanvas(QWidget):
         bar_h = rh - excl_h - 6
 
         for kilo_str in self._drawings:
+            if not self._is_kilo_visible(kilo_str):
+                continue
             for d in self._drawings[kilo_str]:
                 cat = d['category']
                 if cat == '除外区間':
@@ -474,12 +510,42 @@ class HeatmapCanvas(QWidget):
 class WaveformExportDialog(QDialog):
     """波形Excel出力のレイヤー選択ダイアログ"""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, sorted_kilos=None):
         super().__init__(parent)
         self.setWindowTitle("波形Excel出力設定")
         self.setMinimumWidth(500)
         layout = QVBoxLayout(self)
         ctrl_font = QFont("Meiryo", 12)
+
+        # 上下線の有無を判定
+        line_types = set()
+        for k in (sorted_kilos or []):
+            line_types.add(extract_line_type(k))
+        self._has_du = 'd' in line_types or 'u' in line_types
+
+        # 線別選択（上下線がある場合のみ有効）
+        line_group = QGroupBox("出力線別")
+        line_group.setFont(ctrl_font)
+        line_layout = QVBoxLayout(line_group)
+        self._cb_down = QCheckBox("下り")
+        self._cb_down.setFont(ctrl_font)
+        self._cb_down.setStyleSheet("color: #0055cc;")
+        line_layout.addWidget(self._cb_down)
+        self._cb_up = QCheckBox("上り")
+        self._cb_up.setFont(ctrl_font)
+        self._cb_up.setStyleSheet("color: #cc0000;")
+        line_layout.addWidget(self._cb_up)
+        layout.addWidget(line_group)
+
+        if not self._has_du:
+            # 単線のみ: 線別選択を非アクティブ化
+            self._cb_down.setEnabled(False)
+            self._cb_up.setEnabled(False)
+            line_group.setEnabled(False)
+        else:
+            # 上下線あり: 存在する線種のみ有効化
+            self._cb_down.setEnabled('d' in line_types)
+            self._cb_up.setEnabled('u' in line_types)
 
         # 画像種別選択
         img_group = QGroupBox("波形画像")
@@ -632,6 +698,17 @@ class WaveformExportDialog(QDialog):
             'size': self._header_size.value(),
         }
 
+    def selected_line_types(self):
+        """選択された線別リストを返す。単線の場合は['s']。"""
+        if not self._has_du:
+            return ['s']
+        result = []
+        if self._cb_down.isChecked():
+            result.append('d')
+        if self._cb_up.isChecked():
+            result.append('u')
+        return result
+
 
 # ------------------------------------------------------------------
 # メインウィンドウ
@@ -735,6 +812,49 @@ class HeatmapWindow(QMainWindow):
         self._native_btn.toggled.connect(self._toggle_native_ratio)
         top_layout.addWidget(self._native_btn)
 
+        # 上下線フィルタ（混在時のみ表示）
+        sep2 = QLabel("｜")
+        sep2.setFont(ctrl_font)
+        top_layout.addWidget(sep2)
+        self._line_sep = sep2
+
+        line_style = (
+            "QPushButton { border: 2px solid #888; border-radius: 4px; "
+            "padding: 3px 8px; }"
+            "QPushButton:checked { background-color: #555; color: white; "
+            "border-color: white; }"
+        )
+        self._line_btn_group = QButtonGroup(self)
+        self._line_btn_group.setExclusive(True)
+
+        self._line_down_btn = QPushButton("下り")
+        self._line_down_btn.setFont(ctrl_font)
+        self._line_down_btn.setCheckable(True)
+        self._line_down_btn.setChecked(True)
+        self._line_down_btn.setStyleSheet(line_style + "QPushButton:checked { color: #5599ff; }")
+        self._line_btn_group.addButton(self._line_down_btn, 1)
+        top_layout.addWidget(self._line_down_btn)
+
+        self._line_up_btn = QPushButton("上り")
+        self._line_up_btn.setFont(ctrl_font)
+        self._line_up_btn.setCheckable(True)
+        self._line_up_btn.setStyleSheet(line_style + "QPushButton:checked { color: #ff5555; }")
+        self._line_btn_group.addButton(self._line_up_btn, 2)
+        top_layout.addWidget(self._line_up_btn)
+
+        self._line_single_btn = QPushButton("単線")
+        self._line_single_btn.setFont(ctrl_font)
+        self._line_single_btn.setCheckable(True)
+        self._line_single_btn.setStyleSheet(line_style)
+        self._line_btn_group.addButton(self._line_single_btn, 3)
+        top_layout.addWidget(self._line_single_btn)
+
+        self._line_btn_group.idClicked.connect(self._change_line_filter)
+        self._line_filter_widgets = [
+            sep2, self._line_down_btn,
+            self._line_up_btn, self._line_single_btn,
+        ]
+
         top_layout.addStretch()
 
         # Excel出力ボタン
@@ -785,6 +905,36 @@ class HeatmapWindow(QMainWindow):
 
         if image_groups and sorted_kilos and db:
             self._canvas.set_data(image_groups, sorted_kilos, db)
+            self._update_line_filter_visibility()
+
+    def _update_line_filter_visibility(self):
+        """上下線の有無に応じてフィルタスイッチの表示・有効状態を制御"""
+        line_types = set()
+        for kilo in self._sorted_kilos:
+            line_types.add(extract_line_type(kilo))
+
+        has_multi = len(line_types) > 1
+        has_du = 'd' in line_types or 'u' in line_types
+
+        for w in self._line_filter_widgets:
+            w.setVisible(has_multi)
+
+        # 上下線混在時は単線ボタンを非アクティブ化
+        self._line_single_btn.setEnabled('s' in line_types and not has_du)
+
+        # 上下線がある場合: デフォルトは下り
+        # 単線のみ: 単線をデフォルト選択
+        if has_multi:
+            if 'd' in line_types:
+                self._line_down_btn.setChecked(True)
+                self._canvas.set_line_filter('d')
+            elif 'u' in line_types:
+                self._line_up_btn.setChecked(True)
+                self._canvas.set_line_filter('u')
+        else:
+            # 単一線種: その線種でフィルタ
+            lt = next(iter(line_types)) if line_types else 's'
+            self._canvas.set_line_filter(lt)
 
     def _update_filter(self):
         self._canvas.show_yurumi = self._cb_yurumi.isChecked()
@@ -802,13 +952,17 @@ class HeatmapWindow(QMainWindow):
         self._canvas._native_ratio = checked
         self._canvas.update()
 
+    def _change_line_filter(self, btn_id):
+        line_map = {1: 'd', 2: 'u', 3: 's'}
+        self._canvas.set_line_filter(line_map.get(btn_id, 's'))
+
     def _export_waveform_excel(self):
         """連続波形画像をExcelに出力（レイヤー選択付き）"""
         if not self._sorted_kilos:
             QMessageBox.warning(self, "データなし", "出力するデータがありません。")
             return
 
-        dialog = WaveformExportDialog(self)
+        dialog = WaveformExportDialog(self, sorted_kilos=self._sorted_kilos)
         if dialog.exec() != QDialog.Accepted:
             return
 
@@ -816,33 +970,75 @@ class HeatmapWindow(QMainWindow):
         selected_overlays = dialog.selected_overlays()
         image_key = dialog.image_key()
         header_settings = dialog.header_settings()
+        selected_lines = dialog.selected_line_types()
         if not selected_areas:
             QMessageBox.warning(self, "選択なし", "出力するエリアが選択されていません。")
             return
 
-        # 作業フォルダを初期表示
-        default_name = "連続波形画像.xlsx"
-        default_path = (
-            os.path.join(self._parent_folder, default_name)
-            if self._parent_folder else default_name
-        )
-        output_path, _ = QFileDialog.getSaveFileName(
-            self, "波形Excel出力先を選択", default_path, "Excel ファイル (*.xlsx)",
-        )
-        if not output_path:
-            return
+        # 上下線の場合は線別ごとにファイル分割出力
+        line_prefix_map = {'d': '下', 'u': '上', 's': ''}
+
+        if len(selected_lines) == 0:
+            if dialog._has_du:
+                QMessageBox.warning(self, "選択なし", "出力する線別（上り／下り）が選択されていません。")
+                return
+            selected_lines = ['s']
+
+        # 出力先フォルダ選択（複数ファイルの場合）or ファイル選択（単一の場合）
+        if len(selected_lines) == 1 and selected_lines[0] == 's':
+            # 単線: 従来通り1ファイル
+            default_name = "連続波形画像.xlsx"
+            default_path = (
+                os.path.join(self._parent_folder, default_name)
+                if self._parent_folder else default_name
+            )
+            output_path, _ = QFileDialog.getSaveFileName(
+                self, "波形Excel出力先を選択", default_path, "Excel ファイル (*.xlsx)",
+            )
+            if not output_path:
+                return
+            output_files = [(output_path, None)]
+        else:
+            # 上下線: フォルダ選択→線別ファイル自動生成
+            out_dir = QFileDialog.getExistingDirectory(
+                self, "波形Excel出力先フォルダを選択", self._parent_folder,
+            )
+            if not out_dir:
+                return
+            output_files = []
+            for lt in selected_lines:
+                prefix = line_prefix_map.get(lt, '')
+                fname = f"{prefix}_連続波形画像.xlsx" if prefix else "連続波形画像.xlsx"
+                output_files.append((os.path.join(out_dir, fname), lt))
+
         try:
             from data.waveform_exporter import WaveformExcelExporter
-            exporter = WaveformExcelExporter(
-                self._image_groups, self._sorted_kilos, self._db,
-            )
-            exporter.export(
-                output_path,
-                areas=selected_areas,
-                overlays=selected_overlays,
-                image_key=image_key,
-                header_settings=header_settings,
-            )
-            QMessageBox.information(self, "完了", f"波形Excelを保存しました:\n{output_path}")
+
+            for out_path, line_filter in output_files:
+                # 線別にキロ程をフィルタ
+                if line_filter:
+                    filtered_kilos = [
+                        k for k in self._sorted_kilos
+                        if extract_line_type(k) == line_filter
+                    ]
+                else:
+                    filtered_kilos = list(self._sorted_kilos)
+
+                if not filtered_kilos:
+                    continue
+
+                exporter = WaveformExcelExporter(
+                    self._image_groups, filtered_kilos, self._db,
+                )
+                exporter.export(
+                    out_path,
+                    areas=selected_areas,
+                    overlays=selected_overlays,
+                    image_key=image_key,
+                    header_settings=header_settings,
+                )
+
+            paths = "\n".join(p for p, _ in output_files)
+            QMessageBox.information(self, "完了", f"波形Excelを保存しました:\n{paths}")
         except Exception as e:
             QMessageBox.critical(self, "エラー", f"波形Excel出力に失敗しました:\n{e}")

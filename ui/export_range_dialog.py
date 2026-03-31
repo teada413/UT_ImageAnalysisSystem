@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
-from core.calc_utils import parse_kilo
+from core.calc_utils import parse_kilo, extract_line_type, strip_line_prefix, line_type_short
 
 
 class _DragCheckTree(QTreeWidget):
@@ -88,7 +88,11 @@ class ExportRangeDialog(QDialog):
 
         self._items = []
         for kilo in self._sorted_kilos:
-            item = QTreeWidgetItem([kilo])
+            lt = extract_line_type(kilo)
+            bare = strip_line_prefix(kilo)
+            short = line_type_short(lt)
+            display = f"{short}_{bare}" if short else bare
+            item = QTreeWidgetItem([display])
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             item.setCheckState(0, Qt.CheckState.Checked)
             self._tree.addTopLevelItem(item)

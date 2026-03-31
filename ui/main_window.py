@@ -13,7 +13,7 @@ from core.canvas import DrawingCanvas
 from core.calc_utils import (
     parse_kilo, WORK_AREAS, m_to_px_x, px_to_m_x, px_to_m_y,
     calc_location_string, calc_range_string, calc_depth_string,
-    circled_number,
+    circled_number, extract_line_type, strip_line_prefix, line_type_label,
 )
 from data.db_manager import DatabaseManager
 from data.excel_exporter import ExcelExporter
@@ -391,7 +391,19 @@ class ImageViewerApp(QMainWindow):
 
         current_kilo = self.sorted_kilos[self.current_index]
         total = len(self.sorted_kilos)
-        self.info_label.setText(f"キロ程: {current_kilo} ({self.current_index + 1} / {total})")
+        lt = extract_line_type(current_kilo)
+        lt_label = line_type_label(lt)
+        bare_kilo = strip_line_prefix(current_kilo)
+        self.info_label.setText(
+            f"キロ程: {lt_label} {bare_kilo} ({self.current_index + 1} / {total})"
+        )
+        # 線種による色分け: 上り=赤, 下り=青, 単線=デフォルト
+        if lt == 'u':
+            self.info_label.setStyleSheet("color: #cc0000;")
+        elif lt == 'd':
+            self.info_label.setStyleSheet("color: #0055cc;")
+        else:
+            self.info_label.setStyleSheet("")
 
         group = self.image_groups[current_kilo]
         direction = group.get('direction', '起点→終点')

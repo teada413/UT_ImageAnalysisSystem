@@ -7,6 +7,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QColor
 
+from core.calc_utils import extract_line_type, strip_line_prefix, line_type_label
+
 EXCLUSION_BG = QColor(255, 200, 200)
 EXCLUSION_FG = QColor(80, 0, 0)
 
@@ -16,7 +18,9 @@ class DrawingListDialog(QDialog):
 
     def __init__(self, parent=None, db=None, kilo=""):
         super().__init__(parent)
-        self.setWindowTitle(f"変状一覧 - {kilo}")
+        lt = extract_line_type(kilo)
+        bare = strip_line_prefix(kilo)
+        self.setWindowTitle(f"変状一覧 - {line_type_label(lt)} {bare}")
         self.resize(800, 450)
         self._db = db
         self._kilo = kilo

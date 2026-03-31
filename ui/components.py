@@ -6,7 +6,9 @@ from PySide6.QtWidgets import (
     QListWidget, QListWidgetItem,
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtGui import QFont, QColor, QBrush
+
+from core.calc_utils import extract_line_type, strip_line_prefix, line_type_short
 
 from core.calc_utils import circled_number
 
@@ -243,7 +245,17 @@ class KiloListWidget(QWidget):
         self.list_widget.blockSignals(True)
         self.list_widget.clear()
         for kilo in kilo_list:
-            self.list_widget.addItem(kilo)
+            lt = extract_line_type(kilo)
+            bare = strip_line_prefix(kilo)
+            short = line_type_short(lt)
+            display = f"{short}_{bare}" if short else bare
+            item = QListWidgetItem(display)
+            item.setData(Qt.UserRole, kilo)  # 元の複合キーを保持
+            if lt == 'u':
+                item.setForeground(QBrush(QColor("#cc0000")))
+            elif lt == 'd':
+                item.setForeground(QBrush(QColor("#0055cc")))
+            self.list_widget.addItem(item)
         self.list_widget.blockSignals(False)
 
     def set_current_index(self, index):

@@ -149,8 +149,57 @@ def format_table_entry(mgmt_number, area, base_kilo_m, direction, min_x, max_x, 
 
 
 def parse_kilo(k):
-    """キロ程文字列（例: '012k120m'）を数値に変換"""
-    match = re.match(r'(\d+)k(\d+)m', k)
+    """キロ程文字列（例: '012k120m', 'd_012k120m'）を数値に変換。接頭辞は無視。"""
+    match = re.match(r'(?:[dus]_)?(\d+)k(\d+)m', k)
     if match:
         return int(match.group(1)) * 1000 + int(match.group(2))
     return 0
+
+
+# ------------------------------------------------------------------
+# 上下線・単線（線種）ヘルパー
+# ------------------------------------------------------------------
+
+# 線種の順序（ソート用）: 下り=0, 上り=1, 単線=2
+_LINE_TYPE_ORDER = {"d": 0, "u": 1, "s": 2}
+
+# 線種→日本語ラベル
+_LINE_TYPE_LABELS = {"d": "下り", "u": "上り", "s": "単線"}
+
+# 線種→短縮ラベル（キロ程一覧用）
+_LINE_TYPE_SHORT = {"d": "下", "u": "上", "s": ""}
+
+
+def extract_line_type(key):
+    """複合キー（例: 'd_172k000m'）から線種コードを抽出。接頭辞なしは 's'。"""
+    if len(key) > 2 and key[1] == '_' and key[0] in ('d', 'u', 's'):
+        return key[0]
+    return 's'
+
+
+def strip_line_prefix(key):
+    """複合キーから線種接頭辞を除去して純粋なキロ程文字列を返す。"""
+    if len(key) > 2 and key[1] == '_' and key[0] in ('d', 'u', 's'):
+        return key[2:]
+    return key
+
+
+def line_type_label(lt):
+    """線種コードを日本語ラベルに変換（'d' → '下り'）"""
+    return _LINE_TYPE_LABELS.get(lt, "単線")
+
+
+def line_type_short(lt):
+    """線種コードを短縮ラベルに変換（'d' → '下', 's' → ''）"""
+    return _LINE_TYPE_SHORT.get(lt, "")
+
+
+def make_composite_key(line_type, kilo_str):
+    """線種コードとキロ程文字列から複合キーを生成"""
+    return f"{line_type}_{kilo_str}"
+
+
+def composite_sort_key(key):
+    """複合キーのソートキーを返す（線種順→キロ程数値順）"""
+    lt = extract_line_type(key)
+    return (_LINE_TYPE_ORDER.get(lt, 2), parse_kilo(key))

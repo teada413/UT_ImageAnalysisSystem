@@ -37,8 +37,29 @@ class DatabaseManager:
                 pass  # カラムが既に存在
         self.conn.commit()
 
+        # 旧キー（接頭辞なし）を 's_' 接頭辞に自動マイグレーション
+        self._migrate_kilo_keys()
+
         # 既存レコードの location_str を現在のフォーマットで再生成
         self._refresh_location_strings()
+
+    def _migrate_kilo_keys(self):
+        """旧形式のキロ程キー（'012k120m'）を新形式（'s_012k120m'）に変換"""
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "SELECT DISTINCT kilo FROM drawings "
+            "WHERE kilo NOT LIKE 'd\\_%' ESCAPE '\\' "
+            "AND kilo NOT LIKE 'u\\_%' ESCAPE '\\' "
+            "AND kilo NOT LIKE 's\\_%' ESCAPE '\\'"
+        )
+        old_kilos = cursor.fetchall()
+        for (old_kilo,) in old_kilos:
+            cursor.execute(
+                "UPDATE drawings SET kilo=? WHERE kilo=?",
+                (f"s_{old_kilo}", old_kilo),
+            )
+        if old_kilos:
+            self.conn.commit()
 
     def _refresh_location_strings(self):
         """全レコードの location_str を現在の calc_location_string で再生成"""

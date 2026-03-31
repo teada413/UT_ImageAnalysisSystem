@@ -18,6 +18,7 @@ from openpyxl.writer.excel import ExcelWriter
 from core.calc_utils import (
     parse_kilo, px_to_m_x, px_to_m_y,
     format_table_entry, circled_number,
+    extract_line_type, strip_line_prefix, line_type_short,
 )
 
 EMU_PER_PX = 9525
@@ -142,7 +143,11 @@ class ExcelExporter:
 
         for kilo in self.sorted_kilos:
             ws = wb.copy_worksheet(temp_ws)
-            ws.title = kilo
+            # シート名: 下_172k000m / 上_172k000m / 012k120m（単線は接頭辞なし）
+            lt = extract_line_type(kilo)
+            short = line_type_short(lt)
+            bare = strip_line_prefix(kilo)
+            ws.title = (f"{short}_{bare}" if short else bare)[:31]
 
             # テンプレートのPNG画像を手動コピー
             for data in tpl_image_data:
