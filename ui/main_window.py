@@ -704,6 +704,7 @@ class ImageViewerApp(QMainWindow):
             image_groups=self.image_groups,
             sorted_kilos=self.sorted_kilos,
             db=self.db,
+            parent_folder=self.parent_folder,
         )
         win.show()
 

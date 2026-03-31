@@ -64,6 +64,7 @@
     <li><a href="#log">集計表出力</a></li>
     <li><a href="#csv">除外CSV一括取込</a></li>
     <li><a href="#heatmap">ヒートマップ</a></li>
+    <li><a href="#waveform">連続波形画像Excel出力</a></li>
     <li><a href="#shortcut">操作早見表</a></li>
     <li><a href="#trouble">トラブルシューティング</a></li>
   </ol>
@@ -318,15 +319,57 @@ NO.,メッシュ内割合[%],ファイル名,...
     <tr><td>マウスホイール</td><td>ズームイン / ズームアウト</td></tr>
     <tr><td>マウスドラッグ</td><td>左右スクロール</td></tr>
     <tr><td>マウスホバー</td><td>カーソル位置のキロ程をリアルタイム表示</td></tr>
-    <tr><td>上部チェックボックス</td><td>ゆるみ / 空洞 / 除外区間 / 途切れ の表示ON/OFF</td></tr>
+    <tr><td>上部チェックボックス</td><td>ゆるみ / 空洞 / 除外区間 / 途切れ / 波形画像 の表示ON/OFF</td></tr>
+    <tr><td><strong>マーキングあり</strong> / <strong>マーキングなし</strong></td><td>波形画像の画像ソースを切替</td></tr>
+    <tr><td><strong>等倍</strong> ボタン</td><td>ON時、波形画像をネイティブ縦横比で表示（ズームに連動して行高さが変化）</td></tr>
   </table>
 
   <div class="tip">キロ程が途切れている箇所はオレンジ色の破線で表示されます。</div>
+  <div class="tip">「波形画像」チェックボックスをONにすると、左軌間外・軌間内・右軌間外の各行に実際の画像ストリップが背景表示されます。</div>
+</section>
+
+<!-- 12.5 連続波形画像Excel出力 -->
+<section id="waveform">
+  <h2>12.5. 連続波形画像Excel出力</h2>
+  <p>ヒートマップウィンドウの <span class="badge badge-green">連続波形画像Excel出力</span> ボタンから、連続波形画像をExcelに一括出力できます。</p>
+
+  <h3>出力手順</h3>
+  <ol>
+    <li>ヒートマップウィンドウの <span class="badge badge-green">連続波形画像Excel出力</span> をクリックします。</li>
+    <li><strong>出力設定ダイアログ</strong>が開きます。以下を選択してください。
+      <table>
+        <tr><th>項目</th><th>内容</th></tr>
+        <tr><td>波形画像</td><td><strong>マーキングなし</strong>（デフォルト）/ マーキングあり を選択</td></tr>
+        <tr><td>出力エリア</td><td>左軌間外 / 軌間内 / 右軌間外（個別にON/OFF可能）</td></tr>
+        <tr><td>オーバーレイ</td><td>ゆるみ / 空洞 / 除外区間（個別にON/OFF可能）</td></tr>
+      </table>
+    </li>
+    <li>「出力」を押し、保存先を選択します。</li>
+  </ol>
+
+  <h3>出力レイアウト</h3>
+  <ul>
+    <li>テンプレートファイルに基づくレイアウト（A3横向き）</li>
+    <li><strong>1シートあたり4行 = 400m</strong>（100m × 4ブロック）</li>
+    <li>各ブロックの構成:
+      <ul>
+        <li>上部: 0〜20mの繰り返しスケール</li>
+        <li>左側: エリア名＋深さスケール（0.0〜2.0m）</li>
+        <li>中央: 選択エリアの波形画像ストリップ</li>
+        <li>下部: 絶対キロ程スケール</li>
+        <li>20m毎に白色の区切り線</li>
+      </ul>
+    </li>
+    <li>ONになっているオーバーレイ（ゆるみ・空洞・除外区間）が波形画像の上に重ねて表示されます。</li>
+  </ul>
+
+  <div class="tip">テンプレートが見つからない場合はエラーとなります。テンプレートのパスを確認してください。</div>
 </section>
 
 <!-- 13. 操作早見表 -->
 <section id="shortcut">
   <h2>13. 操作早見表</h2>
+  <!-- Note: Section numbering kept as-is for backwards compatibility -->
   <h3>画像上の操作</h3>
   <table>
     <tr><th>操作</th><th>入力モード</th><th>移動モード</th></tr>
